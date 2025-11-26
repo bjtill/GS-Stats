@@ -3,7 +3,7 @@
 Call Rate Analysis Program
 
 Analyzes genotype call rates by sample and marker, comparing groups defined by
-age (Bin) and gender (Breed). Performs statistical tests and generates an HTML report.
+age (Bin) and gender. Performs statistical tests and generates an HTML report.
 
 Usage:
     python call_rate_analysis.py genotype_file.txt sample_age_bin_table.txt -o output_dir [-c threshold]
@@ -43,15 +43,15 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python call_rate_analysis.py genotypes.txt breed_bin.txt -o my_analysis
-    python call_rate_analysis.py genotypes.txt breed_bin.txt -o my_analysis -c 50
+    python call_rate_analysis.py genotypes.txt gender_bin.txt -o my_analysis
+    python call_rate_analysis.py genotypes.txt gender_bin.txt -o my_analysis -c 50
         """
     )
     
     parser.add_argument('genotype_file', 
                         help='Raw genotype file (Marker, Sample, Genotype) - no header, tab/space delimited')
-    parser.add_argument('breed_bin_table', 
-                        help='Sample metadata file (Sample, Breed, Bin) - tab delimited with header')
+    parser.add_argument('gender_bin_table', 
+                        help='Sample metadata file (Sample, Gender, Bin) - tab delimited with header')
     parser.add_argument('-o', '--output', required=True,
                         help='Name for output directory')
     parser.add_argument('-c', '--callrate', type=float, default=None,
@@ -136,9 +136,9 @@ def load_genotype_data(filepath):
     return df
 
 
-def load_breed_bin_table(filepath):
-    """Load breed/bin metadata table."""
-    print(f"Loading breed/bin table from {filepath}...")
+def load_Gender_bin_table(filepath):
+    """Load Gender/bin metadata table."""
+    print(f"Loading Gender/bin table from {filepath}...")
     
     # First, peek at the file to determine format
     with open(filepath, 'r') as f:
@@ -192,25 +192,25 @@ def load_breed_bin_table(filepath):
     
     # Standardize column names
     if len(df.columns) == 3:
-        df.columns = ['Sample', 'Breed', 'Bin']
+        df.columns = ['Sample', 'Gender', 'Bin']
     elif len(df.columns) > 3:
         print(f"  WARNING: Found {len(df.columns)} columns, expected 3. Using first 3 columns.")
         df = df.iloc[:, :3]
-        df.columns = ['Sample', 'Breed', 'Bin']
+        df.columns = ['Sample', 'Gender', 'Bin']
     else:
-        raise ValueError(f"Expected 3 columns (Sample, Breed, Bin), found {len(df.columns)}. "
+        raise ValueError(f"Expected 3 columns (Sample, Gender, Bin), found {len(df.columns)}. "
                         f"Columns: {list(df.columns)}")
     
     # Clean up values
     df['Sample'] = df['Sample'].astype(str).str.strip()
-    df['Breed'] = df['Breed'].astype(str).str.upper().str.strip()
+    df['Gender'] = df['Gender'].astype(str).str.upper().str.strip()
     df['Bin'] = df['Bin'].astype(str).str.upper().str.strip()
     
     print(f"  Sample of parsed data:")
-    print(f"    Row 0: Sample='{df.iloc[0]['Sample']}', Breed='{df.iloc[0]['Breed']}', Bin='{df.iloc[0]['Bin']}'")
+    print(f"    Row 0: Sample='{df.iloc[0]['Sample']}', Gender='{df.iloc[0]['Gender']}', Bin='{df.iloc[0]['Bin']}'")
     
     print(f"  Loaded {len(df)} sample annotations")
-    print(f"  Breeds: {df['Breed'].value_counts().to_dict()}")
+    print(f"  Genders: {df['Gender'].value_counts().to_dict()}")
     print(f"  Bins: {df['Bin'].value_counts().to_dict()}")
     
     return df
@@ -622,7 +622,7 @@ def generate_html_report(output_dir, params, sample_stats_all, marker_stats_all,
         <div class="summary-box">
             <div class="summary-item"><span class="summary-label">Report Generated:</span> {timestamp}</div>
             <div class="summary-item"><span class="summary-label">Genotype File:</span> {params['genotype_file']}</div>
-            <div class="summary-item"><span class="summary-label">Sample Age Bin Table:</span> {params['breed_bin_file']}</div>
+            <div class="summary-item"><span class="summary-label">Sample Age Bin Table:</span> {params['Gender_bin_file']}</div>
             <div class="summary-item"><span class="summary-label">Output Directory:</span> {params['output_dir']}</div>
             <div class="summary-item"><span class="summary-label">Call Rate Threshold:</span> {params['threshold'] if params['threshold'] else 'None (all samples included)'}</div>
             <div class="summary-item"><span class="summary-label">Exclude Failed Markers:</span> {'Yes' if params['exclude_failed_markers'] else 'No'}</div>
@@ -934,8 +934,8 @@ def main():
         print(f"Error: Genotype file not found: {args.genotype_file}")
         sys.exit(1)
     
-    if not os.path.exists(args.breed_bin_table):
-        print(f"Error: Breed/Bin table not found: {args.breed_bin_table}")
+    if not os.path.exists(args.Gender_bin_table):
+        print(f"Error: Gender/Bin table not found: {args.Gender_bin_table}")
         sys.exit(1)
     
     if args.callrate is not None and (args.callrate < 0 or args.callrate > 100):
@@ -955,7 +955,7 @@ def main():
     
     # Load data
     genotype_df = load_genotype_data(args.genotype_file)
-    breed_bin_df = load_breed_bin_table(args.breed_bin_table)
+    Gender_bin_df = load_Gender_bin_table(args.Gender_bin_table)
     
     # Exclude completely failed markers if requested
     failed_markers_list = []
@@ -986,14 +986,14 @@ def main():
         if n_samples_excluded > 0:
             filtered_samples_df.to_csv(os.path.join(output_dir, 'filtered_samples.csv'), index=False)
     
-    # Merge breed/bin info with samples
+    # Merge Gender/bin info with samples
     samples_in_data = genotype_df['Sample'].unique()
-    breed_bin_df = breed_bin_df[breed_bin_df['Sample'].isin(samples_in_data)]
+    Gender_bin_df = Gender_bin_df[Gender_bin_df['Sample'].isin(samples_in_data)]
     
     # Identify samples by group
-    males = breed_bin_df[breed_bin_df['Breed'] == 'M']['Sample'].tolist()
-    females = breed_bin_df[breed_bin_df['Breed'] == 'F']['Sample'].tolist()
-    all_samples = breed_bin_df['Sample'].tolist()
+    males = Gender_bin_df[Gender_bin_df['Gender'] == 'M']['Sample'].tolist()
+    females = Gender_bin_df[Gender_bin_df['Gender'] == 'F']['Sample'].tolist()
+    all_samples = Gender_bin_df['Sample'].tolist()
     
     print(f"\nSample breakdown after filtering:")
     print(f"  Males: {len(males)}")
@@ -1008,13 +1008,13 @@ def main():
     
     # Calculate sample call rates
     sample_call_rates = calculate_sample_call_rates(genotype_df)
-    sample_call_rates = sample_call_rates.merge(breed_bin_df, on='Sample', how='left')
+    sample_call_rates = sample_call_rates.merge(Gender_bin_df, on='Sample', how='left')
     
     # Save call rate tables
     sample_call_rates.to_csv(os.path.join(output_dir, 'call_rates', 'sample_callrates_all.csv'), index=False)
-    sample_call_rates[sample_call_rates['Breed'] == 'M'].to_csv(
+    sample_call_rates[sample_call_rates['Gender'] == 'M'].to_csv(
         os.path.join(output_dir, 'call_rates', 'sample_callrates_males.csv'), index=False)
-    sample_call_rates[sample_call_rates['Breed'] == 'F'].to_csv(
+    sample_call_rates[sample_call_rates['Gender'] == 'F'].to_csv(
         os.path.join(output_dir, 'call_rates', 'sample_callrates_females.csv'), index=False)
     sample_call_rates.to_csv(os.path.join(output_dir, 'call_rates', 'sample_callrates_by_bin.csv'), index=False)
     
@@ -1027,7 +1027,7 @@ def main():
         if subset == 'All':
             subset_df = sample_call_rates
         else:
-            subset_df = sample_call_rates[sample_call_rates['Breed'] == subset]
+            subset_df = sample_call_rates[sample_call_rates['Gender'] == subset]
         
         # Group by Bin
         data_dict = {}
@@ -1073,11 +1073,11 @@ def main():
         marker_cr_females.to_csv(os.path.join(output_dir, 'call_rates', 'marker_callrates_females.csv'), index=False)
         
         # By Bin - need to calculate marker call rates for each bin
-        bins = breed_bin_df['Bin'].dropna().unique()
+        bins = Gender_bin_df['Bin'].dropna().unique()
         marker_by_bin_rows = []
         
         for bin_name in bins:
-            bin_samples = breed_bin_df[breed_bin_df['Bin'] == bin_name]['Sample'].tolist()
+            bin_samples = Gender_bin_df[Gender_bin_df['Bin'] == bin_name]['Sample'].tolist()
             bin_marker_rates = calculate_marker_call_rates(genotype_df, bin_samples)
             bin_marker_rates['Bin'] = bin_name
             marker_by_bin_rows.append(bin_marker_rates)
@@ -1093,10 +1093,10 @@ def main():
             data_dict = {}
             for bin_name in bins:
                 if subset == 'All':
-                    bin_samples = breed_bin_df[breed_bin_df['Bin'] == bin_name]['Sample'].tolist()
+                    bin_samples = Gender_bin_df[Gender_bin_df['Bin'] == bin_name]['Sample'].tolist()
                 else:
-                    bin_samples = breed_bin_df[(breed_bin_df['Bin'] == bin_name) & 
-                                               (breed_bin_df['Breed'] == subset)]['Sample'].tolist()
+                    bin_samples = Gender_bin_df[(Gender_bin_df['Bin'] == bin_name) & 
+                                               (Gender_bin_df['Gender'] == subset)]['Sample'].tolist()
                 
                 if bin_samples:
                     marker_rates = calculate_marker_call_rates(genotype_df, bin_samples)
@@ -1128,7 +1128,7 @@ def main():
     
     params = {
         'genotype_file': os.path.basename(args.genotype_file),
-        'breed_bin_file': os.path.basename(args.breed_bin_table),
+        'Gender_bin_file': os.path.basename(args.Gender_bin_table),
         'output_dir': output_dir,
         'threshold': args.callrate,
         'n_samples_after': len(all_samples),

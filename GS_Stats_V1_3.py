@@ -136,7 +136,7 @@ def load_genotype_data(filepath):
     return df
 
 
-def load_Gender_bin_table(filepath):
+def load_gender_bin_table(filepath):
     """Load Gender/bin metadata table."""
     print(f"Loading Gender/bin table from {filepath}...")
     
@@ -934,8 +934,8 @@ def main():
         print(f"Error: Genotype file not found: {args.genotype_file}")
         sys.exit(1)
     
-    if not os.path.exists(args.Gender_bin_table):
-        print(f"Error: Gender/Bin table not found: {args.Gender_bin_table}")
+    if not os.path.exists(args.gender_bin_table):
+        print(f"Error: Gender/Bin table not found: {args.gender_bin_table}")
         sys.exit(1)
     
     if args.callrate is not None and (args.callrate < 0 or args.callrate > 100):
@@ -955,7 +955,7 @@ def main():
     
     # Load data
     genotype_df = load_genotype_data(args.genotype_file)
-    Gender_bin_df = load_Gender_bin_table(args.Gender_bin_table)
+    Gender_bin_df = load_gender_bin_table(args.gender_bin_table)
     
     # Exclude completely failed markers if requested
     failed_markers_list = []
@@ -1128,7 +1128,7 @@ def main():
     
     params = {
         'genotype_file': os.path.basename(args.genotype_file),
-        'Gender_bin_file': os.path.basename(args.Gender_bin_table),
+        'Gender_bin_file': os.path.basename(args.gender_bin_table),
         'output_dir': output_dir,
         'threshold': args.callrate,
         'n_samples_after': len(all_samples),

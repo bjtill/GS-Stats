@@ -1128,7 +1128,7 @@ def main():
     
     params = {
         'genotype_file': os.path.basename(args.genotype_file),
-        'Gender_bin_file': os.path.basename(args.gender_bin_table),
+        'gender_bin_file': os.path.basename(args.gender_bin_table),
         'output_dir': output_dir,
         'threshold': args.callrate,
         'n_samples_after': len(all_samples),
